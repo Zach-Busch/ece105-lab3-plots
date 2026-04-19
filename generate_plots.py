@@ -12,6 +12,7 @@ Usage
 from __future__ import annotations
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def generate_data(seed: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -93,3 +94,75 @@ def plot_scatter(ax: "matplotlib.axes.Axes", timestamps: np.ndarray, sensor_a: n
 
     # Nothing is returned; Axes modified in place
     return None
+
+# Create main() that generates data, creates a 1x3 subplot figure,
+# calls each plot function, adjusts layout, and saves as sensor_analysis.png
+# at 150 DPI with tight bounding box.    
+
+def main(seed: int = 6012) -> None:
+    """Generate data, create a 1x3 figure with the analysis plots, and save it.
+
+    The function generates synthetic sensor data using generate_data(),
+    creates a 1x3 Matplotlib figure containing a scatter plot, a
+    histogram comparing the two sensors, and a side-by-side boxplot.
+    The resulting figure is saved to ``sensor_analysis.png`` at 150 DPI
+    with a tight bounding box. The function modifies Matplotlib objects
+    in place and returns None.
+
+    Parameters
+    ----------
+    seed : int, optional
+        RNG seed for reproducible data (default is 6012).
+
+    Returns
+    -------
+    None
+    """
+    # Generate reproducible data
+    sensor_a, sensor_b, timestamps = generate_data(seed)
+
+    # Create a 1x3 subplot figure
+    fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+
+    # Left: scatter
+    plot_scatter(axes[0], timestamps, sensor_a, sensor_b)
+    axes[0].set_title("Sensor readings over time")
+
+    # Middle: histogram
+    ax = axes[1]
+    bins = np.linspace(min(sensor_a.min(), sensor_b.min()) - 1,
+                       max(sensor_a.max(), sensor_b.max()) + 1, 31)
+    ax.hist(sensor_a, bins=bins, alpha=0.5, color="C0",
+            label=f"Sensor A (mean={sensor_a.mean():.2f} °C)")
+    ax.hist(sensor_b, bins=bins, alpha=0.5, color="C1",
+            label=f"Sensor B (mean={sensor_b.mean():.2f} °C)")
+    ax.axvline(sensor_a.mean(), color="C0", linestyle="--", linewidth=2)
+    ax.axvline(sensor_b.mean(), color="C1", linestyle="--", linewidth=2)
+    ax.set_xlabel("Temperature (°C)")
+    ax.set_ylabel("Count")
+    ax.legend(frameon=True)
+    ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
+    ax.set_title("Temperature distribution")
+
+    # Right: boxplot
+    ax = axes[2]
+    data = [sensor_a, sensor_b]
+    bplot = ax.boxplot(data, labels=["Sensor A", "Sensor B"], patch_artist=True)
+    # Color the boxes to match the scatter/hist colors
+    colors = ["C0", "C1"]
+    for patch, color in zip(bplot["boxes"], colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.6)
+    ax.set_ylabel("Temperature (°C)")
+    ax.set_title("Sensor comparison (boxplot)")
+    ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
+
+    # Final layout adjustments and save
+    fig.tight_layout()
+    fig.savefig("sensor_analysis.png", dpi=150, bbox_inches="tight")
+    print("Saved sensor_analysis.png")
+    return None
+
+
+if __name__ == "__main__":
+    main()
