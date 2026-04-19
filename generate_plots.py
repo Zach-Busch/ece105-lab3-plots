@@ -166,3 +166,4 @@ def main(seed: int = 6012) -> None:
 
 if __name__ == "__main__":
     main()
+
